@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -39,22 +41,69 @@ namespace idc
         [DllImport("user32.dll")]
         static extern bool PostMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
 
+        static void Screenshot()
+        {
+            Bitmap bmp;
+            Rectangle rect = new Rectangle(365, 635, 616, 343);
+            bmp = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppArgb);
+            Graphics g = Graphics.FromImage(bmp);
+            g.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size, CopyPixelOperation.SourceCopy);
+
+            try
+            {
+                using (Bitmap ondisk = new Bitmap("msg.bmp"))
+                {
+                    if (!CompareBitmaps(bmp, ondisk))
+                    {
+                        Process[] processes = Process.GetProcessesByName("chrome");
+                        foreach (Process proc in processes)
+                        {
+                            PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_I, 0);
+                            PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_D, 0);
+                            PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_C, 0);
+                            PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_RETURN, 0);
+                        }
+                        Thread.Sleep(100);
+                    }
+                }
+            }
+            catch (ArgumentException)
+            {
+                
+            }
+
+            bmp = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppArgb);
+            g = Graphics.FromImage(bmp);
+            g.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size, CopyPixelOperation.SourceCopy);
+            bmp.Save("msg.bmp", ImageFormat.Bmp);
+        }
+
+        public static bool CompareBitmaps(Bitmap bmp1, Bitmap bmp2)
+        {
+            if (!bmp1.Size.Equals(bmp2.Size))
+            {
+                return false;
+            }
+            for (int x = 0; x < bmp1.Width; ++x)
+            {
+                for (int y = 0; y < bmp1.Height; ++y)
+                {
+                    if (bmp1.GetPixel(x, y) != bmp2.GetPixel(x, y))
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         [STAThread]
         static void Main()
         {
             while(true)
             {
-                Process [] processes = Process.GetProcessesByName("chrome");
-
-                foreach (Process proc in processes)
-                {
-                    PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_I, 0);
-                    PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_D, 0);
-                    PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_C, 0);
-                    PostMessage(proc.MainWindowHandle, WM_KEYDOWN, VK_RETURN, 0);
-                }
-
-                Thread.Sleep(5000);
+                Screenshot();
+                Thread.Sleep(2000);
             }
         }
     }
