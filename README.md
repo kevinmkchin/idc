@@ -1,0 +1,5 @@
+# idc
+
+```
+dotnet run
+```
