@@ -40,11 +40,22 @@ namespace idc
         const int VK_RETURN = 0x0D;
         [DllImport("user32.dll")]
         static extern bool PostMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
-
+        [FlagsAttribute]
+        public enum EXECUTION_STATE :uint
+        {
+            ES_AWAYMODE_REQUIRED = 0x00000040,
+            ES_CONTINUOUS = 0x80000000,
+            ES_DISPLAY_REQUIRED = 0x00000002,
+            ES_SYSTEM_REQUIRED = 0x00000001
+            // Legacy flag, should not be used.
+            // ES_USER_PRESENT = 0x00000004
+        }
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto,SetLastError = true)]
+        static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
         static void Screenshot()
         {
             Bitmap bmp;
-            Rectangle rect = new Rectangle(365, 635, 616, 343);
+            Rectangle rect = new Rectangle(365, 550, 400, 343);
             bmp = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppArgb);
             Graphics g = Graphics.FromImage(bmp);
             g.CopyFromScreen(rect.Left, rect.Top, 0, 0, bmp.Size, CopyPixelOperation.SourceCopy);
@@ -104,6 +115,7 @@ namespace idc
             {
                 Screenshot();
                 Thread.Sleep(2000);
+                SetThreadExecutionState(EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_CONTINUOUS);
             }
         }
     }
